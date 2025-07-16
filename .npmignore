@@ -1,0 +1,40 @@
+# NPM ignore file for @quixomatic/ui-renderer-react-simple
+
+# Development files
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Testing
+coverage/
+.nyc_output
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Node
+node_modules/
+
+# Don't include test projects
+test-project/
+example/
+demo/
+
+# Build artifacts
+dist/
+build/
+
+# Documentation source (keep the built docs)
+docs/src/
+
+# Git
+.git/
+.gitignore

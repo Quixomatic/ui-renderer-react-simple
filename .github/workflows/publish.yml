@@ -1,0 +1,61 @@
+name: Publish to NPM
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '18'
+        registry-url: 'https://registry.npmjs.org'
+
+    - name: Install dependencies
+      run: npm ci
+
+    - name: Run tests
+      run: |
+        npm pack --dry-run
+        npm pack
+        
+        # Test installation
+        mkdir test-project
+        cd test-project
+        npm init -y
+        npm install react@18 react-dom@18
+        npm install ../quixomatic-ui-renderer-react-simple-*.tgz
+        npx setup-servicenow-react
+        npm install
+        
+        # Verify setup
+        test -f src/node_modules/@servicenow/ui-renderer-react/index.js
+        node -e "console.log('✅ Pre-publish tests passed')"
+
+    - name: Publish to NPM
+      run: npm publish --access public
+      env:
+        NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+    - name: Verify publication
+      run: |
+        sleep 30  # Wait for npm to update
+        npm view @quixomatic/ui-renderer-react-simple version
+      env:
+        NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+    - name: Post-publish test
+      run: |
+        mkdir verify-project
+        cd verify-project
+        npm init -y
+        npm install @quixomatic/ui-renderer-react-simple react@18 react-dom@18
+        npx setup-servicenow-react
+        npm install
+        node -e "console.log('✅ Post-publish verification passed')"

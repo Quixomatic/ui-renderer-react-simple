@@ -1,0 +1,127 @@
+name: Test Package
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    
+    strategy:
+      matrix:
+        node-version: [16.x, 18.x, 20.x]
+        react-version: ['18.0.0', '18.2.0', '18.3.1']
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Use Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v3
+      with:
+        node-version: ${{ matrix.node-version }}
+        cache: 'npm'
+
+    - name: Install dependencies
+      run: npm ci
+
+    - name: Test package structure
+      run: |
+        npm pack --dry-run
+        npm pack
+        tar -tzf *.tgz
+
+    - name: Test installation
+      run: |
+        mkdir test-project
+        cd test-project
+        npm init -y
+        npm install react@${{ matrix.react-version }} react-dom@${{ matrix.react-version }}
+        npm install ../quixomatic-ui-renderer-react-simple-*.tgz
+        npx setup-servicenow-react
+        npm install
+
+    - name: Verify setup
+      run: |
+        cd test-project
+        test -f src/node_modules/@servicenow/ui-renderer-react/index.js
+        test -f src/node_modules/@servicenow/ui-renderer-react/package.json
+        grep -q "@servicenow/ui-renderer-react" package.json
+
+    - name: Test import
+      run: |
+        cd test-project
+        node -e "
+          const react = require('@servicenow/ui-renderer-react');
+          console.log('✅ Import successful');
+          console.log('Has onStateChange:', typeof react.onStateChange === 'function');
+          console.log('Has createElement:', typeof react.createElement === 'function');
+          console.log('Has Fragment:', typeof react.Fragment === 'object');
+        "
+
+  windows:
+    runs-on: windows-latest
+    
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Use Node.js 18
+      uses: actions/setup-node@v3
+      with:
+        node-version: '18'
+        cache: 'npm'
+
+    - name: Install dependencies
+      run: npm ci
+
+    - name: Test on Windows
+      run: |
+        npm pack
+        mkdir test-project
+        cd test-project
+        npm init -y
+        npm install react@18 react-dom@18
+        npm install ../quixomatic-ui-renderer-react-simple-*.tgz
+        npx setup-servicenow-react
+        npm install
+
+    - name: Verify Windows setup
+      run: |
+        cd test-project
+        if (!(Test-Path "src/node_modules/@servicenow/ui-renderer-react/index.js")) { exit 1 }
+        node -e "console.log('✅ Windows test passed')"
+      shell: powershell
+
+  macos:
+    runs-on: macos-latest
+    
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Use Node.js 18
+      uses: actions/setup-node@v3
+      with:
+        node-version: '18'
+        cache: 'npm'
+
+    - name: Install dependencies
+      run: npm ci
+
+    - name: Test on macOS
+      run: |
+        npm pack
+        mkdir test-project
+        cd test-project
+        npm init -y
+        npm install react@18 react-dom@18
+        npm install ../quixomatic-ui-renderer-react-simple-*.tgz
+        npx setup-servicenow-react
+        npm install
+
+    - name: Verify macOS setup
+      run: |
+        cd test-project
+        test -f src/node_modules/@servicenow/ui-renderer-react/index.js
+        node -e "console.log('✅ macOS test passed')"

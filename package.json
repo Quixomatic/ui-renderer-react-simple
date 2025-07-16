@@ -1,0 +1,40 @@
+{
+  "name": "@quixomatic/ui-renderer-react-simple",
+  "version": "1.0.0",
+  "description": "React 18 renderer for ServiceNow UI Framework with automatic setup",
+  "main": "index.js",
+  "bin": {
+    "setup-servicenow-react": "./scripts/setup.js"
+  },
+  "files": [
+    "index.js",
+    "package.json",
+    "README.md",
+    "INSTALLATION.md",
+    "scripts/"
+  ],
+  "peerDependencies": {
+    "react": "^18.0.0",
+    "react-dom": "^18.0.0"
+  },
+  "keywords": [
+    "servicenow",
+    "react",
+    "renderer",
+    "ui-framework",
+    "next-experience",
+    "react-18",
+    "babel",
+    "jsx"
+  ],
+  "author": "Quixomatic",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/quixomatic/ui-renderer-react-simple"
+  },
+  "bugs": {
+    "url": "https://github.com/quixomatic/ui-renderer-react-simple/issues"
+  },
+  "homepage": "https://github.com/quixomatic/ui-renderer-react-simple#readme"
+}
