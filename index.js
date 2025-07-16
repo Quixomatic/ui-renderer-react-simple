@@ -97,6 +97,11 @@ function onDisconnect(element, next = noop) {
 	callAsync(next);
 }
 
+export const createElement = React.createElement;
+export const Fragment = React.Fragment;
+export const createRef = React.createRef;
+export { onConnect, onDisconnect, onStateChange };
+
 // Match the export format of @quixomatic/ui-renderer-react and @servicenow/ui-renderer-react
 export default {
 	Fragment: React.Fragment,
