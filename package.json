@@ -1,10 +1,12 @@
 {
   "name": "@quixomatic/ui-renderer-react-simple",
-  "version": "1.0.1",
-  "description": "React 18 renderer for ServiceNow UI Framework with automatic setup",
+  "version": "1.1.0",
+  "description": "React 18 renderer for ServiceNow UI Framework with automatic setup and babel plugin patching",
   "main": "index.js",
   "bin": {
-    "setup-servicenow-react": "./scripts/setup.js"
+    "setup-servicenow-react": "./scripts/setup.js",
+    "patch-servicenow-babel": "./scripts/patch-babel.js",
+    "restore-servicenow-babel": "./scripts/restore-babel.js"
   },
   "files": [
     "index.js",

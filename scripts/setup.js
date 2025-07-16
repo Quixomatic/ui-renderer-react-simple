@@ -2,6 +2,7 @@
 
 const fs = require('fs');
 const path = require('path');
+const BabelPatcher = require('./babel-patcher');
 
 console.log('🔧 Setting up ServiceNow React 18 renderer...');
 
@@ -77,11 +78,31 @@ try {
     process.exit(1);
   }
 
-  console.log('🎉 Setup complete!');
+  console.log('🎉 Fake package setup complete!');
   console.log('');
-  console.log('Next steps:');
-  console.log('1. Run: npm install');
-  console.log('2. Import in your components: import react from "@servicenow/ui-renderer-react"');
+  
+  // Patch the ServiceNow babel plugin
+  console.log('🔧 Patching ServiceNow babel plugin...');
+  const patcher = new BabelPatcher();
+  const patchSuccess = patcher.run('patch');
+  
+  if (patchSuccess) {
+    console.log('🎉 Complete setup finished successfully!');
+    console.log('');
+    console.log('✅ React 18 is now ready to use in ServiceNow components!');
+    console.log('');
+    console.log('Next steps:');
+    console.log('1. Run: npm install');
+    console.log('2. Run: snc ui-component develop');
+    console.log('3. Import in your components: import react from "@servicenow/ui-renderer-react"');
+    console.log('');
+    console.log('To restore the original babel plugin: npx restore-servicenow-babel');
+  } else {
+    console.log('⚠️  Fake package created, but babel plugin patching failed.');
+    console.log('You may need to manually patch the babel plugin or run:');
+    console.log('npx patch-servicenow-babel');
+  }
+  
   console.log('');
   console.log('Example usage:');
   console.log('```javascript');
