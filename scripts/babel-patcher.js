@@ -1,13 +1,12 @@
 /**
- * Automated ServiceNow Babel Plugin Patcher
+ * Improved ServiceNow Babel Plugin Patcher
  * 
- * This script automatically patches the ServiceNow babel plugin to correctly
- * handle @servicenow/ui-renderer-react without requiring manual modifications.
- * 
- * The issue: ServiceNow's babel plugin uses u() function which returns the
- * snabbdom module path for ALL renderers, including React ones.
- * 
- * The fix: Replace u() with the correct module path for React renderers.
+ * This version handles both minified and non-minified babel plugins by using
+ * more flexible regex patterns that account for:
+ * - Different function names (u(), m(), etc.)
+ * - Single or double quotes
+ * - Variable whitespace
+ * - Minification patterns
  */
 
 const fs = require('fs');
@@ -64,7 +63,36 @@ class BabelPluginPatcher {
      * Check if the file is already patched
      */
     isAlreadyPatched(content) {
-        return content.includes(`'@servicenow/ui-renderer-react': { module: '@servicenow/ui-renderer-react', import: 'createElement', export: 'createElement' }`);
+        // More flexible pattern to detect if already patched
+        const patchedPattern = /['"]@servicenow\/ui-renderer-react['"]:\s*{\s*module:\s*['"]@servicenow\/ui-renderer-react['"],\s*import:\s*['"]createElement['"],?\s*export:\s*['"]createElement['"]/;
+        return patchedPattern.test(content);
+    }
+
+    /**
+     * Extract the current function name used in the babel plugin (u(), m(), etc.)
+     */
+    extractFunctionName(content) {
+        // Look for pattern like: "@servicenow/ui-snabbdom-renderer":{module:"@servicenow/ui-snabbdom-renderer"
+        // This tells us this is the correct pattern, and we can find the function used for React
+        const snabbdomPattern = /['"]@servicenow\/ui-snabbdom-renderer['"]:\s*{\s*module:\s*['"]@servicenow\/ui-snabbdom-renderer['"]/;
+        
+        if (snabbdomPattern.test(content)) {
+            console.log('✅ Detected non-minified babel plugin (uses string literals)');
+            return 'string-literal'; // Special marker for non-minified
+        }
+
+        // Look for React renderer with function call
+        const reactFunctionPattern = /['"]@servicenow\/ui-renderer-react['"]:\s*{\s*module:\s*([a-zA-Z_$][a-zA-Z0-9_$]*)\(\)/;
+        const match = content.match(reactFunctionPattern);
+        
+        if (match) {
+            const functionName = match[1];
+            console.log(`✅ Detected minified babel plugin (function: ${functionName}())`);
+            return functionName;
+        }
+
+        console.log('⚠️  Could not determine babel plugin format');
+        return null;
     }
 
     /**
@@ -79,33 +107,95 @@ class BabelPluginPatcher {
                 return true;
             }
 
-            // Find the babel plugin JSX configuration section
-            const originalPattern = /'@servicenow\/ui-renderer-react':\s*{\s*module:\s*u\(\),\s*import:\s*'createElement'\s*}/g;
-            const replacement = `'@servicenow/ui-renderer-react': { module: '@servicenow/ui-renderer-react', import: 'createElement', export: 'createElement' }`;
+            const functionName = this.extractFunctionName(content);
+            if (!functionName) {
+                console.error('❌ Could not determine babel plugin format');
+                return false;
+            }
 
-            if (content.match(originalPattern)) {
-                content = content.replace(originalPattern, replacement);
-                console.log('✅ Applied React renderer patch');
+            let patched = false;
+
+            if (functionName === 'string-literal') {
+                // Non-minified version - look for u() pattern
+                const patterns = [
+                    // Pattern 1: Look for u() function
+                    {
+                        regex: /(["'])@servicenow\/ui-renderer-react\1:\s*{\s*module:\s*u\(\),\s*import:\s*(["'])createElement\2\s*}/g,
+                        replacement: `"@servicenow/ui-renderer-react": { module: "@servicenow/ui-renderer-react", import: "createElement", export: "createElement" }`
+                    },
+                    // Pattern 2: Alternative whitespace/quote variations
+                    {
+                        regex: /(["'])@servicenow\/ui-renderer-react\1:\s*{\s*module:\s*[a-zA-Z_$][a-zA-Z0-9_$]*\(\),\s*import:\s*(["'])createElement\2\s*}/g,
+                        replacement: `"@servicenow/ui-renderer-react": { module: "@servicenow/ui-renderer-react", import: "createElement", export: "createElement" }`
+                    }
+                ];
+
+                for (const pattern of patterns) {
+                    if (content.match(pattern.regex)) {
+                        content = content.replace(pattern.regex, pattern.replacement);
+                        console.log('✅ Applied React renderer patch (non-minified)');
+                        patched = true;
+                        break;
+                    }
+                }
             } else {
-                // Alternative: look for the imports section and patch it
-                const importsPattern = /(imports:\s*{\s*[^}]+)'@servicenow\/ui-renderer-react':\s*{\s*module:\s*u\(\),\s*import:\s*'createElement'\s*}([^}]+})/s;
-                
-                if (content.match(importsPattern)) {
-                    content = content.replace(importsPattern, (match, before, after) => {
-                        return before + replacement + after;
-                    });
-                    console.log('✅ Applied React renderer patch (alternative method)');
+                // Minified version - use the detected function name
+                const patterns = [
+                    // Pattern 1: Exact function match
+                    {
+                        regex: new RegExp(`(["'])@servicenow\\/ui-renderer-react\\1:\\s*{\\s*module:\\s*${functionName}\\(\\),\\s*import:\\s*(["'])createElement\\2\\s*}`, 'g'),
+                        replacement: `"@servicenow/ui-renderer-react": { module: "@servicenow/ui-renderer-react", import: "createElement", export: "createElement" }`
+                    },
+                    // Pattern 2: Any function call pattern (fallback)
+                    {
+                        regex: /(["'])@servicenow\/ui-renderer-react\1:\s*{\s*module:\s*[a-zA-Z_$][a-zA-Z0-9_$]*\(\),\s*import:\s*(["'])createElement\2\s*}/g,
+                        replacement: `"@servicenow/ui-renderer-react": { module: "@servicenow/ui-renderer-react", import: "createElement", export: "createElement" }`
+                    }
+                ];
+
+                for (const pattern of patterns) {
+                    if (content.match(pattern.regex)) {
+                        content = content.replace(pattern.regex, pattern.replacement);
+                        console.log(`✅ Applied React renderer patch (minified, function: ${functionName}())`);
+                        patched = true;
+                        break;
+                    }
+                }
+            }
+
+            if (!patched) {
+                // Final fallback - try to find and replace any React renderer entry
+                const fallbackPattern = /(["'])@servicenow\/ui-renderer-react\1:\s*{\s*module:\s*[^,}]+,\s*import:\s*(["'])createElement\2[^}]*}/g;
+                if (content.match(fallbackPattern)) {
+                    content = content.replace(fallbackPattern, `"@servicenow/ui-renderer-react": { module: "@servicenow/ui-renderer-react", import: "createElement", export: "createElement" }`);
+                    console.log('✅ Applied React renderer patch (fallback method)');
+                    patched = true;
                 } else {
-                    console.error('❌ Could not find the pattern to patch. The babel plugin structure may have changed.');
+                    console.error('❌ Could not find the React renderer pattern to patch.');
+                    console.error('The babel plugin structure may have changed significantly.');
+                    
+                    // Debug: show what we found
+                    const reactEntries = content.match(/(["'])@servicenow\/ui-renderer-react\1[^}]+}/g);
+                    if (reactEntries) {
+                        console.error('Found React renderer entries:');
+                        reactEntries.forEach(entry => console.error(`  ${entry}`));
+                    }
+                    
                     return false;
                 }
             }
 
             // Remove any old @quixomatic/ui-renderer-react entries if they exist
-            const quixomaticPattern = /,?\s*\/\/[^']*?\n\s*'@quixomatic\/ui-renderer-react':[^,}]+/g;
-            if (content.match(quixomaticPattern)) {
-                content = content.replace(quixomaticPattern, '');
-                console.log('✅ Removed old @quixomatic/ui-renderer-react entries');
+            const quixomaticPatterns = [
+                /,?\s*\/\/[^'"]*?\n\s*(["'])@quixomatic\/ui-renderer-react\1:[^,}]+/g,
+                /,?\s*(["'])@quixomatic\/ui-renderer-react\1:[^,}]+/g
+            ];
+
+            for (const pattern of quixomaticPatterns) {
+                if (content.match(pattern)) {
+                    content = content.replace(pattern, '');
+                    console.log('✅ Removed old @quixomatic/ui-renderer-react entries');
+                }
             }
 
             // Write the patched content
@@ -146,12 +236,53 @@ class BabelPluginPatcher {
                 console.log('✅ React renderer should now work without issues');
             } else {
                 console.error('❌ Patch verification failed');
+                console.error('The React renderer may not work correctly');
             }
             
             return isPatched;
         } catch (error) {
             console.error('❌ Error verifying patch:', error.message);
             return false;
+        }
+    }
+
+    /**
+     * Debug method to analyze the babel plugin structure
+     */
+    debug() {
+        try {
+            const content = fs.readFileSync(this.babelPluginPath, 'utf8');
+            
+            console.log('🔍 Babel Plugin Analysis:');
+            console.log('========================');
+            
+            // Check if minified
+            const isMinified = content.length > 1000 && !content.includes('\n  ');
+            console.log(`Minified: ${isMinified ? 'Yes' : 'No'}`);
+            
+            // Find React renderer entries
+            const reactPattern = /(["'])@servicenow\/ui-renderer-react\1[^}]+}/g;
+            const reactEntries = content.match(reactPattern);
+            
+            if (reactEntries) {
+                console.log('\nFound React renderer entries:');
+                reactEntries.forEach((entry, i) => {
+                    console.log(`  ${i + 1}. ${entry}`);
+                });
+            } else {
+                console.log('\n❌ No React renderer entries found');
+            }
+            
+            // Check function pattern
+            const functionName = this.extractFunctionName(content);
+            if (functionName) {
+                console.log(`\nFunction pattern: ${functionName}()`);
+            }
+            
+            console.log('\n========================');
+            
+        } catch (error) {
+            console.error('❌ Error analyzing babel plugin:', error.message);
         }
     }
 
@@ -170,6 +301,8 @@ class BabelPluginPatcher {
                     this.verify();
                     return true;
                 } else {
+                    console.log('\n🔍 Running debug analysis...');
+                    this.debug();
                     return false;
                 }
 
@@ -179,8 +312,12 @@ class BabelPluginPatcher {
             case 'verify':
                 return this.verify();
 
+            case 'debug':
+                this.debug();
+                return true;
+
             default:
-                console.error('❌ Unknown action. Use: patch, restore, or verify');
+                console.error('❌ Unknown action. Use: patch, restore, verify, or debug');
                 return false;
         }
     }
