@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.1.1] - 2026-11-18
+
+### Fixed
+- The CLI commands (`setup-servicenow-react`, `patch-servicenow-babel`,
+  `restore-servicenow-babel`, `servicenow-shadcn-fix`) were missing from 2.1.0: npm 11.19 drops
+  `bin` paths that start with `./` at publish time. Paths are now written without it, and a test
+  guards against regressions.
+
 ## [2.1.0] - 2026-11-18
 
 (2.0.0 was never published; this is the first React 19 release.)

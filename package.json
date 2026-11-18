@@ -1,6 +1,6 @@
 {
   "name": "@quixomatic/ui-renderer-react-simple",
-  "version": "2.1.0",
+  "version": "2.1.1",
   "description": "React 19 for ServiceNow Next Experience components: a ui-core renderer with React 19 bundled in, plus setup and CLI patching",
   "type": "module",
   "main": "dist/index.js",
@@ -10,10 +10,10 @@
     "./package.json": "./package.json"
   },
   "bin": {
-    "setup-servicenow-react": "./scripts/setup.cjs",
-    "patch-servicenow-babel": "./scripts/patch-babel.cjs",
-    "restore-servicenow-babel": "./scripts/restore-babel.cjs",
-    "servicenow-shadcn-fix": "./scripts/shadcn-fix.cjs"
+    "setup-servicenow-react": "scripts/setup.cjs",
+    "patch-servicenow-babel": "scripts/patch-babel.cjs",
+    "restore-servicenow-babel": "scripts/restore-babel.cjs",
+    "servicenow-shadcn-fix": "scripts/shadcn-fix.cjs"
   },
   "files": [
     "dist/",
@@ -51,7 +51,7 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/Quixomatic/ui-renderer-react-simple"
+    "url": "git+https://github.com/Quixomatic/ui-renderer-react-simple.git"
   },
   "bugs": {
     "url": "https://github.com/Quixomatic/ui-renderer-react-simple/issues"
