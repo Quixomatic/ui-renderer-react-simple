@@ -1,6 +1,6 @@
 # Contributing to @quixomatic/ui-renderer-react-simple
 
-Thank you for your interest in contributing! This project aims to provide seamless React 18 integration for ServiceNow Next Experience components.
+Thank you for your interest in contributing! This project aims to provide seamless React 19 integration for ServiceNow Next Experience components.
 
 ## Getting Started
 
@@ -50,19 +50,19 @@ Thank you for your interest in contributing! This project aims to provide seamle
    npm pack
    
    # In a test project
-   npm install ../ui-renderer-react-simple/quixomatic-ui-renderer-react-simple-1.0.0.tgz
+   npm install ../ui-renderer-react-simple/quixomatic-ui-renderer-react-simple-2.0.0.tgz
    npx setup-servicenow-react
    ```
 
 2. **Test with different React versions**:
    ```bash
-   npm install react@18.0.0 react-dom@18.0.0
-   npm install react@18.2.0 react-dom@18.2.0
+   # React is bundled: bump the react / react-dom devDependencies, then
+   npm run build && npm test
    ```
 
 3. **Test setup script**:
    ```bash
-   rm -rf src/node_modules/@servicenow/ui-renderer-react
+   npm test   # unit tests: renderer (jsdom) + babel patcher
    npx setup-servicenow-react
    ```
 
@@ -81,7 +81,7 @@ Use conventional commit format:
 type(scope): description
 
 Examples:
-feat: add support for React 18.3
+feat: support React 19.3
 fix: resolve VNode filtering edge case
 docs: update installation guide
 test: add setup script tests
@@ -231,7 +231,7 @@ We're working on:
  * @param {React.Component} Component - React component to render
  * @param {Object} state - ServiceNow component state
  * @param {Object} helpers - ServiceNow helper functions
- * @returns {ReactRoot} React 18 root instance
+ * @returns {ReactRoot} React 19 root instance
  */
 function onStateChange(element, Component, state, helpers) {
   // Implementation
@@ -326,4 +326,4 @@ Contributors will be:
 - Mentioned in release notes
 - Credited in package.json (for significant contributions)
 
-Thank you for contributing to making React 18 work seamlessly with ServiceNow! 🎉
+Thank you for contributing to making React 19 work seamlessly with ServiceNow! 🎉

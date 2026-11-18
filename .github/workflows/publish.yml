@@ -1,61 +1,60 @@
-name: Publish to NPM
+name: Publish to npm
 
+# Push a version tag to publish:  git tag v2.1.0 && git push origin v2.1.0
 on:
-  release:
-    types: [published]
+  push:
+    tags:
+      - 'v2.*.*'
+
+permissions:
+  contents: read
+  id-token: write # npm provenance / trusted publishing
+
+concurrency:
+  group: publish-${{ github.ref }}
+  cancel-in-progress: false
 
 jobs:
   publish:
     runs-on: ubuntu-latest
-    
     steps:
-    - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
-    - name: Setup Node.js
-      uses: actions/setup-node@v3
-      with:
-        node-version: '18'
-        registry-url: 'https://registry.npmjs.org'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24.x
+          registry-url: https://registry.npmjs.org
+          cache: npm
 
-    - name: Install dependencies
-      run: npm ci
+      - run: npm ci
 
-    - name: Run tests
-      run: |
-        npm pack --dry-run
-        npm pack
-        
-        # Test installation
-        mkdir test-project
-        cd test-project
-        npm init -y
-        npm install react@18 react-dom@18
-        npm install ../quixomatic-ui-renderer-react-simple-*.tgz
-        npx setup-servicenow-react
-        npm install
-        
-        # Verify setup
-        test -f src/node_modules/@servicenow/ui-renderer-react/index.js
-        node -e "console.log('✅ Pre-publish tests passed')"
+      - name: Tag must match package.json version
+        run: |
+          TAG="${GITHUB_REF_NAME#v}"
+          VERSION="$(node -p "require('./package.json').version")"
+          if [ "$TAG" != "$VERSION" ]; then
+            echo "::error::Tag v$TAG does not match package.json version $VERSION"
+            exit 1
+          fi
 
-    - name: Publish to NPM
-      run: npm publish --access public
-      env:
-        NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+      - name: Test (builds dist/ first)
+        run: npm test
 
-    - name: Verify publication
-      run: |
-        sleep 30  # Wait for npm to update
-        npm view @quixomatic/ui-renderer-react-simple version
-      env:
-        NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+      - name: Skip if this version is already on npm
+        id: published
+        run: |
+          NAME="$(node -p "require('./package.json').name")"
+          VERSION="$(node -p "require('./package.json').version")"
+          if npm view "$NAME@$VERSION" version >/dev/null 2>&1; then
+            echo "already=true" >> "$GITHUB_OUTPUT"
+            echo "::notice::$NAME@$VERSION is already published; nothing to do."
+          fi
 
-    - name: Post-publish test
-      run: |
-        mkdir verify-project
-        cd verify-project
-        npm init -y
-        npm install @quixomatic/ui-renderer-react-simple react@18 react-dom@18
-        npx setup-servicenow-react
-        npm install
-        node -e "console.log('✅ Post-publish verification passed')"
+      - name: Publish
+        if: steps.published.outputs.already != 'true'
+        # prepack runs the build, so dist/ is always fresh in the tarball.
+        run: npm publish --access public --provenance
+        env:
+          # Classic automation token. Not needed if npm trusted publishing is configured
+          # for this repository on npmjs.com (OIDC via id-token above).
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

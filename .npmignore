@@ -29,7 +29,6 @@ example/
 demo/
 
 # Build artifacts
-dist/
 build/
 
 # Documentation source (keep the built docs)

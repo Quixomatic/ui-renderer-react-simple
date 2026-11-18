@@ -1,23 +1,41 @@
 {
   "name": "@quixomatic/ui-renderer-react-simple",
-  "version": "1.1.1",
-  "description": "React 18 renderer for ServiceNow UI Framework with automatic setup and babel plugin patching",
-  "main": "index.js",
+  "version": "2.1.0",
+  "description": "React 19 for ServiceNow Next Experience components: a ui-core renderer with React 19 bundled in, plus setup and CLI patching",
+  "type": "module",
+  "main": "dist/index.js",
+  "module": "dist/index.js",
+  "exports": {
+    ".": "./dist/index.js",
+    "./package.json": "./package.json"
+  },
   "bin": {
-    "setup-servicenow-react": "./scripts/setup.js",
-    "patch-servicenow-babel": "./scripts/patch-babel.js",
-    "restore-servicenow-babel": "./scripts/restore-babel.js"
+    "setup-servicenow-react": "./scripts/setup.cjs",
+    "patch-servicenow-babel": "./scripts/patch-babel.cjs",
+    "restore-servicenow-babel": "./scripts/restore-babel.cjs",
+    "servicenow-shadcn-fix": "./scripts/shadcn-fix.cjs"
   },
   "files": [
-    "index.js",
-    "package.json",
+    "dist/",
+    "scripts/",
     "README.md",
     "INSTALLATION.md",
-    "scripts/"
+    "CHANGELOG.md"
   ],
-  "peerDependencies": {
-    "react": "^18.0.0",
-    "react-dom": "^18.0.0"
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "prepack": "npm run build",
+    "pretest": "npm run build",
+    "test": "node --test test/*.test.js"
+  },
+  "devDependencies": {
+    "esbuild": "^0.28.2",
+    "jsdom": "^31.0.1",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1"
+  },
+  "engines": {
+    "node": ">=18"
   },
   "keywords": [
     "servicenow",
@@ -25,7 +43,7 @@
     "renderer",
     "ui-framework",
     "next-experience",
-    "react-18",
+    "react-19",
     "babel",
     "jsx"
   ],
@@ -33,10 +51,10 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/quixomatic/ui-renderer-react-simple"
+    "url": "https://github.com/Quixomatic/ui-renderer-react-simple"
   },
   "bugs": {
-    "url": "https://github.com/quixomatic/ui-renderer-react-simple/issues"
+    "url": "https://github.com/Quixomatic/ui-renderer-react-simple/issues"
   },
-  "homepage": "https://github.com/quixomatic/ui-renderer-react-simple#readme"
+  "homepage": "https://github.com/Quixomatic/ui-renderer-react-simple#readme"
 }

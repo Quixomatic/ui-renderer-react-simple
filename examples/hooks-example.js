@@ -1,7 +1,7 @@
 /**
  * Example: React Hooks in ServiceNow Components
  * 
- * This example demonstrates how to use React 18 hooks
+ * This example demonstrates how to use React 19 hooks
  * within ServiceNow components.
  */
 
@@ -15,7 +15,7 @@ createCustomElement("hooks-example", {
     view,
     properties: {
         initialMessage: {
-            default: "React 18 Hooks Example"
+            default: "React 19 Hooks Example"
         }
     }
 });
